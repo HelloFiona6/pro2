@@ -41,6 +41,8 @@ public class DatabaseServiceImpl implements DatabaseService {
     }
 
     @Override
+
+
     public void importData(
             List<DanmuRecord> danmuRecords,
             List<UserRecord> userRecords,
@@ -53,10 +55,10 @@ public class DatabaseServiceImpl implements DatabaseService {
     }
 
 
-    /*
+    /**
      * The following code is just a quick example of using jdbc datasource.
      * Practically, the code interacts with database is usually written in a DAO layer.
-     *
+     * <p>
      * Reference: [Data Access Object pattern](https://www.baeldung.com/java-dao-pattern)
      */
 
@@ -65,7 +67,9 @@ public class DatabaseServiceImpl implements DatabaseService {
         // You can use the default truncate script provided by us in most cases,
         // but if it doesn't work properly, you may need to modify it.
 
-        String sql = "DO $$\n" +
+        String sql;
+
+        sql = "DO $$\n" +
                 "DECLARE\n" +
                 "    tables CURSOR FOR\n" +
                 "        SELECT tablename\n" +
@@ -89,7 +93,6 @@ public class DatabaseServiceImpl implements DatabaseService {
     @Override
     public Integer sum(int a, int b) {
         String sql = "SELECT ?+?";
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, a);

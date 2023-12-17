@@ -24,6 +24,7 @@ public interface DanmuService {
      * </ul>
      * If any of the corner case happened, {@code -1} shall be returned.
      */
+
     long sendDanmu(AuthInfo auth, String bv, String content, float time);
 
     /**
@@ -48,6 +49,7 @@ public interface DanmuService {
      * </ul>
      * If any of the corner case happened, {@code null} shall be returned.
      */
+
     List<Long> displayDanmu(String bv, float timeStart, float timeEnd, boolean filter);
 
     /**

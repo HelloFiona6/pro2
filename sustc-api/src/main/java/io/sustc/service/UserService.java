@@ -5,7 +5,6 @@ import io.sustc.dto.RegisterUserReq;
 import io.sustc.dto.UserInfoResp;
 
 public interface UserService {
-
     /**
      * Registers a new user.
      * {@code password} is a mandatory field, while {@code qq} and {@code wechat} are optional
