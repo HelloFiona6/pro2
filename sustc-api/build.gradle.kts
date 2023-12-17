@@ -36,7 +36,7 @@ tasks.register("submitJar") {
         dependencies {
             exclude(dependency("ch.qos.logback:logback-.*"))
         }
-    }.let { dependsOn(it) }
+    }.let{ dependsOn(it) }
 }
 
 tasks.clean {
