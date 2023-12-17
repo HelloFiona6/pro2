@@ -86,4 +86,8 @@ public class VideoRecord implements Serializable {
      * The watch durations in seconds for the viewers {@code viewerMids}
      */
     private float[] viewTime;
+
+    public VideoRecord(long ownerMid){
+        this.ownerMid = ownerMid;
+    }
 }

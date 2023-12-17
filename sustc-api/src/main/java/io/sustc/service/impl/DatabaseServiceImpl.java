@@ -37,7 +37,7 @@ public class DatabaseServiceImpl implements DatabaseService {
     @Override
     public List<Integer> getGroupMembers() {
         //TODO: replace this with your own student IDs in your group
-        return Arrays.asList(6);
+        return Arrays.asList(12210360,12210723);
     }
 
     @Override
@@ -51,6 +51,7 @@ public class DatabaseServiceImpl implements DatabaseService {
         System.out.println(userRecords.size());
         System.out.println(videoRecords.size());
     }
+
 
     /*
      * The following code is just a quick example of using jdbc datasource.
