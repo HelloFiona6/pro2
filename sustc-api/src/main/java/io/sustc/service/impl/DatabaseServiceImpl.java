@@ -36,7 +36,7 @@ public class DatabaseServiceImpl implements DatabaseService {
 
     @Override
     public List<Integer> getGroupMembers() {
-        //TODO: replace this with your own student IDs in your group
+        //replace this with your own student IDs in your group
         return Arrays.asList(12210360,12210723);
     }
 
@@ -49,11 +49,68 @@ public class DatabaseServiceImpl implements DatabaseService {
             List<VideoRecord> videoRecords
     ) {
         // TODO: implement your import logic
-        System.out.println(danmuRecords.size());
-        System.out.println(userRecords.size());
-        System.out.println(videoRecords.size());
-    }
+        String danmuSql = "INSERT INTO danmu_table (bv, mid, time, content, post_time) VALUES (?, ?, ?, ?, ?)";
+        String userSql = "INSERT INTO user_table (mid, name, sex, birthday, level, coin, sign, identity, password, qq, wechat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String videoSql = "INSERT INTO video_table (bv, title, owner_mid, owner_name, commit_time, review_time, public_time, duration, description, reviewer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false); // 关闭自动提交事务
+
+            // 导入弹幕记录
+            try (PreparedStatement danmuStmt = conn.prepareStatement(danmuSql)) {
+                for (DanmuRecord danmuRecord : danmuRecords) {
+                    danmuStmt.setString(1, danmuRecord.getBv());
+                    danmuStmt.setLong(2, danmuRecord.getMid());
+                    danmuStmt.setFloat(3, danmuRecord.getTime());
+                    danmuStmt.setString(4, danmuRecord.getContent());
+                    danmuStmt.setTimestamp(5, danmuRecord.getPostTime());
+                    danmuStmt.addBatch(); // 添加到批处理
+                }
+                danmuStmt.executeBatch(); // 执行批处理
+            }
+
+            // 导入用户记录
+            try (PreparedStatement userStmt = conn.prepareStatement(userSql)) {
+                for (UserRecord userRecord : userRecords) {
+                    userStmt.setLong(1, userRecord.getMid());
+                    userStmt.setString(2, userRecord.getName());
+                    userStmt.setString(3, userRecord.getSex());
+                    userStmt.setString(4, userRecord.getBirthday());
+                    userStmt.setShort(5, userRecord.getLevel());
+                    userStmt.setInt(6, userRecord.getCoin());
+                    userStmt.setString(7, userRecord.getSign());
+                    userStmt.setString(8, userRecord.getIdentity().name());
+                    userStmt.setString(9, userRecord.getPassword());
+                    userStmt.setString(10, userRecord.getQq());
+                    userStmt.setString(11, userRecord.getWechat());
+                    userStmt.addBatch(); // 添加到批处理
+                }
+                userStmt.executeBatch(); // 执行批处理
+            }
+
+            // 导入视频记录
+            try (PreparedStatement videoStmt = conn.prepareStatement(videoSql)) {
+                for (VideoRecord videoRecord : videoRecords) {
+                    videoStmt.setString(1, videoRecord.getBv());
+                    videoStmt.setString(2, videoRecord.getTitle());
+                    videoStmt.setLong(3, videoRecord.getOwnerMid());
+                    videoStmt.setString(4, videoRecord.getOwnerName());
+                    videoStmt.setTimestamp(5, videoRecord.getCommitTime());
+                    videoStmt.setTimestamp(6, videoRecord.getReviewTime());
+                    videoStmt.setTimestamp(7, videoRecord.getPublicTime());
+                    videoStmt.setFloat(8, videoRecord.getDuration());
+                    videoStmt.setString(9, videoRecord.getDescription());
+                    videoStmt.setLong(10, videoRecord.getReviewer());
+                    videoStmt.addBatch(); // 添加到批处理
+                }
+                videoStmt.executeBatch(); // 执行批处理
+            }
+
+            conn.commit(); // 提交事务
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * The following code is just a quick example of using jdbc datasource.
