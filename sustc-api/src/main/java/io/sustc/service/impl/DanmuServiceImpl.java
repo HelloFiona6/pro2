@@ -21,13 +21,10 @@ public class DanmuServiceImpl implements DanmuService {
     public long sendDanmu(AuthInfo auth, String bv, String content, float time) {
         if (!validAuth(auth)) return -1;
 
-        //bv存在
         if (!existBv(bv)) return -1;
 
-        //内容合法
         if (content == null || content.isEmpty()) return -1;
 
-        //视频公布
         String sqlOfPublic = "select public_time::timestamp as public_time from video where owner_mid = ?";
         String current = "select current_timestamp";
         Timestamp publicTime = null;
@@ -61,8 +58,6 @@ public class DanmuServiceImpl implements DanmuService {
             return -1;
         }
 
-
-        //是否观看
         String sqlOfWatch = "select count(*) as count from view where video_bv = ? and user_mid = ?";
         int numberOfWatch = 0;
         try (Connection conn = dataSource.getConnection();
@@ -82,7 +77,6 @@ public class DanmuServiceImpl implements DanmuService {
         if (numberOfWatch != 1) return -1;
 
 
-        //最大弹幕id
         String sqlOfMaxMid = " select max(danmu_id) as max from danmu";
         long MaxID = 0L;
         try (Connection conn = dataSource.getConnection();
@@ -101,7 +95,6 @@ public class DanmuServiceImpl implements DanmuService {
     public List<Long> displayDanmu(String bv, float timeStart, float timeEnd, boolean filter) {
         if (!existBv(bv)) return null;
 
-        //获取时长
         String sqlOfDuration = "select duration from video where bv = ? ";
         float duration = 0;
         try (Connection conn = dataSource.getConnection();
@@ -117,12 +110,10 @@ public class DanmuServiceImpl implements DanmuService {
             throw new RuntimeException(e);
         }
 
-        //合法时间
         if (timeEnd <= timeStart || timeEnd > duration || timeEnd < 0 || timeStart < 0 || timeStart > duration) {
             return null;
         }
 
-        //视频公布
         String sqlOfPublic = "select public_time::timestamp as public_time from video where bv = ?";
         String current = "select current_timestamp";
         Timestamp publicTime = null;
@@ -156,7 +147,7 @@ public class DanmuServiceImpl implements DanmuService {
             return null;
         }
 
-        //获取List
+        //List
         List<Long> list = new ArrayList<>();
 
         String sqlOfWatch = "select ? danmu_id as id from danmu where time between ? and ? order by post_time";

@@ -46,7 +46,6 @@ public class DatabaseServiceImpl implements DatabaseService {
             List<UserRecord> userRecords,
             List<VideoRecord> videoRecords
     ) {
-        // TODO: implement your import logic
         /*
           mid,name,sex,birthday,level,coin,sign,identity,password,qq,wechat
           BV,title,owner_mid,owner_name,commit_time,review_time,public_time,duration,description,reviewer_mid
@@ -79,7 +78,7 @@ public class DatabaseServiceImpl implements DatabaseService {
         long cntLikeDanmu=0;
         // todo
         try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false); // 关闭自动提交事务
+            conn.setAutoCommit(false);
 
             // 导入用户记录
             try (PreparedStatement userStmt = conn.prepareStatement(userSql);
@@ -112,7 +111,7 @@ public class DatabaseServiceImpl implements DatabaseService {
                         userStmt.executeBatch();
                     }
                 }
-                userStmt.executeBatch(); // 执行批处理
+                userStmt.executeBatch();
                 followStmt.executeBatch();
             }
             try (PreparedStatement followStmt = conn.prepareStatement(followSql)) {
@@ -131,7 +130,6 @@ public class DatabaseServiceImpl implements DatabaseService {
                 followStmt.executeBatch();
             }
 
-            // 导入视频记录
             try (PreparedStatement videoStmt = conn.prepareStatement(videoSql);
                  PreparedStatement likeStmt = conn.prepareStatement(likeSql);
                  PreparedStatement coinStmt = conn.prepareStatement(coinSql);
@@ -192,7 +190,7 @@ public class DatabaseServiceImpl implements DatabaseService {
                         videoStmt.executeBatch();
                     }
                 }
-                videoStmt.executeBatch(); // 执行批处理
+                videoStmt.executeBatch();
                 likeStmt.executeBatch();
                 coinStmt.executeBatch();
                 favoriteStmt.executeBatch();
@@ -274,10 +272,10 @@ public class DatabaseServiceImpl implements DatabaseService {
                         danmuStmt.executeBatch();
                     }
                 }
-                danmuStmt.executeBatch(); // 执行批处理
+                danmuStmt.executeBatch();
                 DanmuLikeByStmt.executeBatch();
             }
-            conn.commit(); // 提交事务
+            conn.commit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

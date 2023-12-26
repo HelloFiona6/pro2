@@ -50,7 +50,6 @@ public class VideoServiceImpl implements VideoService {
         if (!isValidReq(req, auth)) return null;
         String bv = generateBv();
 
-        // 创建VideoRecord对象
         VideoRecord videoRecord = new VideoRecord(auth.getMid());
         videoRecord.setBv(bv);
         videoRecord.setTitle(req.getTitle());
@@ -63,8 +62,6 @@ public class VideoServiceImpl implements VideoService {
         videoRecord.setDescription(req.getDescription());
         videoRecord.setReviewer(null);
 
-
-        // 将VideoRecord对象导入数据库
         importVideoRecord(videoRecord);
 
         return bv;
@@ -94,26 +91,95 @@ public class VideoServiceImpl implements VideoService {
         }
     }
 
-    // todo
     private boolean isValidAuth(AuthInfo auth) {
         // both qq and Wechat are non-empty while they do not correspond to same user
         if (auth.getQq().isEmpty() && auth.getWechat().isEmpty()) return false;
         // mid is invalid while qq and wechat are both invalid (empty or not found)
-        return true;
+        String sqlOfWechatAndQQ = "select count(*) as count from users where Wechat= ? or QQ=?";
+        int numberOfMid = 0;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlOfWechatAndQQ)) {
+            stmt.setString(1, auth.getWechat());
+            stmt.setString(2, auth.getQq());
+            ResultSet resultSet = stmt.executeQuery(sqlOfWechatAndQQ);
+            if (resultSet.next()) {
+                numberOfMid = resultSet.getInt("count");
+            }
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        if (auth.getWechat() != null && auth.getQq() != null) {
+            return numberOfMid != 1;
+        }
+
+        if (existMid(auth.getMid()) && (auth.getQq() == null || !existQQ(auth.getQq())) && (auth.getWechat() == null || !existWechat(auth.getWechat()))) {
+            return true;
+        }
+        return false;
+    }
+    private boolean existMid(long mid) {
+        String sqlOfMid = "select count(*) as count from users where mid= ?";
+        int numberOfMid = 0;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlOfMid)) {
+            stmt.setLong(1, mid);
+            ResultSet resultSet = stmt.executeQuery(sqlOfMid);
+            if (resultSet.next()) {
+                numberOfMid = resultSet.getInt("count");
+            }
+            resultSet.close();
+            stmt.close();
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return numberOfMid != 1;
+    }
+    private boolean existQQ(String QQ) {
+        String sqlOfMid = "select count(*) as count from users where mid= ?";
+        int numberOfMid = 0;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlOfMid)) {
+            stmt.setString(1, QQ);
+            ResultSet resultSet = stmt.executeQuery(sqlOfMid);
+            if (resultSet.next()) {
+                numberOfMid = resultSet.getInt("count");
+            }
+            resultSet.close();
+            stmt.close();
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return numberOfMid == 1;
+    }
+    private boolean existWechat(String Wechat) {
+        String sqlOfMid = "select count(*) as count from users where mid= ?";
+        int numberOfMid = 0;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlOfMid)) {
+            stmt.setString(1, Wechat);
+            ResultSet resultSet = stmt.executeQuery(sqlOfMid);
+            if (resultSet.next()) {
+                numberOfMid = resultSet.getInt("count");
+            }
+            resultSet.close();
+            stmt.close();
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return numberOfMid == 1;
     }
 
     private boolean isValidReq(PostVideoReq req, AuthInfo auth) {
-        // 检查视频标题是否为空或为空字符串
         if (req.getTitle() == null || req.getTitle().isEmpty()) {
             return false;
         }
-
-        // 检查视频时长是否小于10秒
         if (req.getDuration() < 10) {
             return false;
         }
-
-        // 检查视频公开时间是否早于当前时间
         if (req.getPublicTime() != null && req.getPublicTime().before(Timestamp.valueOf(LocalDateTime.now()))) {
             return false;
         }
@@ -505,17 +571,14 @@ public class VideoServiceImpl implements VideoService {
             return null;
         }
 
-        // 检查关键字是否为空
         if (keywords == null || keywords.isEmpty()) {
             return null;
         }
-
-        // 检查 pageSize 和 pageNum 的有效性
+        // pageSize pageNum
         if (pageSize <= 0 || pageNum <= 0) {
             return null;
         }
 
-        // 将关键字拆分为单词
         String[] keywordArray = keywords.split(" ");
 
         // build query
@@ -689,9 +752,8 @@ public class VideoServiceImpl implements VideoService {
         if (!findVideo(bv)) return Collections.emptySet();
         // no one send danmu
         if (!isDanmu(bv)) return Collections.emptySet();
-        // todo SQL
         Set<Integer> hotspotChunks = new HashSet<>();
-        String query = "SELECT time / 10 AS chunk FROM danmu WHERE BV = ? GROUP BY chunk ORDER BY COUNT(*) DESC LIMIT 1";
+        String query = "SELECT floor(time / 10)  AS chunk FROM danmu WHERE BV = ? GROUP BY chunk ORDER BY COUNT(*) DESC LIMIT 1";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, bv);

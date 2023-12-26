@@ -170,7 +170,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserInfoResp getUserInfo(long mid) {
-        //mid合法
+        //mid
         String sqlOfNumberOfMid = "select count(*) as count from UserRecord where mid= ?";
         int numberOfMid = 0;
         try (Connection conn = dataSource.getConnection();
@@ -188,7 +188,7 @@ public class UserServiceImpl implements UserService {
         }
         if (numberOfMid != 1) return null;
 
-        //coin个数
+        //coin
         String sqlOfNumberOfCoin = """
                 select count(owner_mid) from (
                 select *
@@ -209,7 +209,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException(e);
         }
 
-        //following数组
+        //following array
         String sqlOfFollowing = """
                 select following_mid count from follow where follower_mid='?'
                 """;
@@ -231,7 +231,7 @@ public class UserServiceImpl implements UserService {
         for (int i = 0; i < arrayListOfFollowing.size(); i++) {
             arrayOfFollowing[i] = arrayListOfFollowing.get(i);
         }
-        //follower数组
+        //follower
         String sqlOfFollower = """
                 select follower_mid as count from follow where following_mid='?'
                 """;
@@ -254,7 +254,7 @@ public class UserServiceImpl implements UserService {
             arrayOfFollowing[i] = arrayListOfFollower.get(i);
         }
 
-        //watch数组
+        //watch
         String sqlOfWatch = """
                 select video_bv as bv from view where user_mid = ?
                 """;
@@ -275,7 +275,7 @@ public class UserServiceImpl implements UserService {
         String[] arrayOfWatch = arrayListOfWatch.toArray(new String[0]);
 
 
-        //like数组
+        //like
         String sqlOfLike = """
                 select video_bv as bv from thumbs_up where user_mid = ?
                 """;
@@ -295,7 +295,7 @@ public class UserServiceImpl implements UserService {
         }
         String[] arrayOfLike = arrayListOfLike.toArray(new String[0]);
 
-        //collect数组
+        //collect
         String sqlOfCollect = """
                 select video_bv as bv from favorite where user_mid='?'
                 """;
@@ -315,7 +315,7 @@ public class UserServiceImpl implements UserService {
         }
         String[] arrayOfCollect = arrayListOfCollect.toArray(new String[0]);
 
-        //post数组
+        //post
         String sqlOfPost = """
                 select video_bv as bv from video where user_mid='?'            
                 """;

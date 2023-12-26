@@ -216,7 +216,7 @@ public class RecommenderServiceImpl implements RecommenderService {
         List<Node> temp = new ArrayList<>();
         for (int i = 0; i < listOfBv.size(); i++) {
             double sum = 0;
-            //like个数
+            //like
             String sqlOfLike = """
                     select count(*) as count from thumbs_up where video_bv = ?
                     """;
@@ -233,7 +233,7 @@ public class RecommenderServiceImpl implements RecommenderService {
                 throw new RuntimeException(e);
             }
 
-            //coin个数
+            //coin
             String sqlOfCoin = """
                     select count(*) as count from coin where video_bv = ?
                     """;
@@ -251,7 +251,7 @@ public class RecommenderServiceImpl implements RecommenderService {
             }
 
 
-            //fav个数
+            //fav
             String sqlOfFav = """
                     select count(*) as count from favorite where video_bv = ?
                     """;
@@ -268,7 +268,7 @@ public class RecommenderServiceImpl implements RecommenderService {
                 throw new RuntimeException(e);
             }
 
-            //danmu个数
+            //danmu
             String sqlOfDanmu = """
                     select count(*) as count from favorite where bv = ?
                     """;
@@ -285,7 +285,7 @@ public class RecommenderServiceImpl implements RecommenderService {
                 throw new RuntimeException(e);
             }
 
-            //finish个数
+            //finish
             String sqlOfFinish = """
                     select count(*) count from view left join video on view.video_BV = video.BV where last_watch_time_duration=duration and bv=?
                     """;
@@ -302,7 +302,7 @@ public class RecommenderServiceImpl implements RecommenderService {
                 throw new RuntimeException(e);
             }
 
-            //总数
+            //total
             String sqlOfView = """
                     select count(*) as count from view where video_bv = ?
                     """;
