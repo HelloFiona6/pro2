@@ -79,7 +79,7 @@ public class DatabaseServiceImpl implements DatabaseService {
         long cntFavorite=0;
         long cntView=0;
         long cntLikeDanmu=0;
-
+        // todo
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false); // 关闭自动提交事务
 
@@ -115,6 +115,21 @@ public class DatabaseServiceImpl implements DatabaseService {
                     }
                 }
                 userStmt.executeBatch(); // 执行批处理
+                followStmt.executeBatch();
+            }
+            try (PreparedStatement followStmt = conn.prepareStatement(followSql)) {
+                for (UserRecord userRecord : userRecords) {
+                    for(long follower:userRecord.getFollowing()){
+                        followStmt.setLong(1,userRecord.getMid());
+                        followStmt.setLong(2,follower);
+                        followStmt.addBatch();
+                        cntFollow++;
+
+                        if(cntFollow % 100 == 0){
+                            followStmt.executeBatch();
+                        }
+                    }
+                }
                 followStmt.executeBatch();
             }
 
@@ -185,6 +200,56 @@ public class DatabaseServiceImpl implements DatabaseService {
                 favoriteStmt.executeBatch();
                 viewStmt.executeBatch();
             }
+            // like coin favorite view
+            try (PreparedStatement likeStmt = conn.prepareStatement(likeSql);
+                 PreparedStatement coinStmt = conn.prepareStatement(coinSql);
+                 PreparedStatement favoriteStmt = conn.prepareStatement(favoriteSql);
+                 PreparedStatement viewStmt = conn.prepareStatement(viewSql)
+            ) {
+                for (VideoRecord videoRecord : videoRecords) {
+                    for(long like:videoRecord.getLike()){
+                        likeStmt.setString(1,videoRecord.getBv());
+                        likeStmt.setLong(2,like);
+                        likeStmt.addBatch();
+                        cntLike++;
+                        if(cntLike % 100 == 0){
+                            likeStmt.executeBatch();
+                        }
+                    }
+                    for(long coin:videoRecord.getCoin()){
+                        coinStmt.setString(1,videoRecord.getBv());
+                        coinStmt.setLong(2,coin);
+                        coinStmt.addBatch();
+                        cntCoin++;
+                        if(cntCoin % 100 == 0){
+                            coinStmt.executeBatch();
+                        }
+                    }
+                    for(long favorite:videoRecord.getFavorite()){
+                        favoriteStmt.setString(1,videoRecord.getBv());
+                        favoriteStmt.setLong(2,favorite);
+                        favoriteStmt.addBatch();
+                        cntFavorite++;
+                        if(cntFavorite % 100 == 0){
+                            favoriteStmt.executeBatch();
+                        }
+                    }
+                    for (int i = 0; i < videoRecord.getViewerMids().length; i++) {
+                        viewStmt.setString(1,videoRecord.getBv());
+                        viewStmt.setLong(2,videoRecord.getViewerMids()[i]);
+                        viewStmt.setFloat(3,videoRecord.getViewTime()[i]);
+                        viewStmt.addBatch();
+                        cntView++;
+                        if(cntView % 100 == 0){
+                            viewStmt.executeBatch();
+                        }
+                    }
+                }
+                likeStmt.executeBatch();
+                coinStmt.executeBatch();
+                favoriteStmt.executeBatch();
+                viewStmt.executeBatch();
+            }
             String danmuId;
             // 导入弹幕记录
             try (PreparedStatement danmuStmt = conn.prepareStatement(danmuSql);
@@ -232,7 +297,7 @@ public class DatabaseServiceImpl implements DatabaseService {
      */
 
     public String findDanmuId(String bv,long mid){
-        String sql = "select danmu_id from danmu where bv = '?' and user_mid = ?";
+        String sql = "select danmu_id from danmu where bv = ? and user_mid = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, bv);
