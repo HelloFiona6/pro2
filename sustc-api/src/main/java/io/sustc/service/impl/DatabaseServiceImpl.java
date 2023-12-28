@@ -46,6 +46,9 @@ public class DatabaseServiceImpl implements DatabaseService {
             List<UserRecord> userRecords,
             List<VideoRecord> videoRecords
     ) {
+        // todo delete foreign key
+        // todo multithreading
+        // todo rollback
         /*
           mid,name,sex,birthday,level,coin,sign,identity,password,qq,wechat
           BV,title,owner_mid,owner_name,commit_time,review_time,public_time,duration,description,reviewer_mid
@@ -57,9 +60,9 @@ public class DatabaseServiceImpl implements DatabaseService {
           View:video_BV, user_mid, last_watch_time_duration
           DanmuLikeBy: danmu_id,mid
          */
-        String danmuSql = "INSERT INTO danmu (bv, user_mid, time, content, post_time) VALUES (?, ?, ?, ?, ?)";
+        String danmuSql = "INSERT INTO danmu (bv, user_mid, time, content, post_time,danmu_id) VALUES (?, ?, ?, ?, ?)";
         String userSql = "INSERT INTO users (mid, name, sex, birthday, level, coin, sign, identity, password, qq, wechat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String videoSql = "INSERT INTO video (bv, title, owner_mid, owner_name, commit_time, review_time, public_time, duration, description, reviewer_mid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String videoSql = "INSERT INTO video (bv, title, owner_mid, owner_name, commit_time, review_time, public_time, duration, description, reviewer_mid,coin,view,likes,favorite) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String followSql = "INSERT INTO follow (follower_mid,following_mid) VALUES (?, ?)";
         String likeSql = "INSERT INTO thumbs_up (video_BV,user_mid) VALUES (?, ?)";
         String coinSql = "INSERT INTO coin (video_BV,user_mid) VALUES (?, ?)";
@@ -76,11 +79,9 @@ public class DatabaseServiceImpl implements DatabaseService {
         long cntFavorite=0;
         long cntView=0;
         long cntLikeDanmu=0;
-        // todo
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
-            // 导入用户记录
             try (PreparedStatement userStmt = conn.prepareStatement(userSql);
             PreparedStatement followStmt = conn.prepareStatement(followSql)) {
                 for (UserRecord userRecord : userRecords) {
@@ -97,16 +98,6 @@ public class DatabaseServiceImpl implements DatabaseService {
                     userStmt.setString(11, userRecord.getWechat());
                     userStmt.addBatch(); // 添加到批处理
                     cntUser++;
-                    for(long follower:userRecord.getFollowing()){
-                        followStmt.setLong(1,userRecord.getMid());
-                        followStmt.setLong(2,follower);
-                        followStmt.addBatch();
-                        cntFollow++;
-
-                        if(cntFollow % 100 == 0){
-                            followStmt.executeBatch();
-                        }
-                    }
                     if(cntUser % 100 == 0){
                         userStmt.executeBatch();
                     }
@@ -114,6 +105,7 @@ public class DatabaseServiceImpl implements DatabaseService {
                 userStmt.executeBatch();
                 followStmt.executeBatch();
             }
+
             try (PreparedStatement followStmt = conn.prepareStatement(followSql)) {
                 for (UserRecord userRecord : userRecords) {
                     for(long follower:userRecord.getFollowing()){
@@ -129,14 +121,11 @@ public class DatabaseServiceImpl implements DatabaseService {
                 }
                 followStmt.executeBatch();
             }
-
-            try (PreparedStatement videoStmt = conn.prepareStatement(videoSql);
-                 PreparedStatement likeStmt = conn.prepareStatement(likeSql);
-                 PreparedStatement coinStmt = conn.prepareStatement(coinSql);
-                 PreparedStatement favoriteStmt = conn.prepareStatement(favoriteSql);
-                 PreparedStatement viewStmt = conn.prepareStatement(viewSql)
+            // todo coin,view,likes,favorite
+            try (PreparedStatement videoStmt = conn.prepareStatement(videoSql)
                  ) {
                 for (VideoRecord videoRecord : videoRecords) {
+
                     videoStmt.setString(1, videoRecord.getBv());
                     videoStmt.setString(2, videoRecord.getTitle());
                     videoStmt.setLong(3, videoRecord.getOwnerMid());
@@ -147,54 +136,17 @@ public class DatabaseServiceImpl implements DatabaseService {
                     videoStmt.setFloat(8, videoRecord.getDuration());
                     videoStmt.setString(9, videoRecord.getDescription());
                     videoStmt.setLong(10, videoRecord.getReviewer());
+                    videoStmt.setLong(11, videoRecord.getCoin().length);
+                    videoStmt.setLong(12, videoRecord.getViewerMids().length);
+                    videoStmt.setLong(13, videoRecord.getLike().length);
+                    videoStmt.setLong(14, videoRecord.getFavorite().length);
                     videoStmt.addBatch(); // 添加到批处理
                     cntVideo++;
-                    for(long like:videoRecord.getLike()){
-                        likeStmt.setString(1,videoRecord.getBv());
-                        likeStmt.setLong(2,like);
-                        likeStmt.addBatch();
-                        cntLike++;
-                        if(cntLike % 100 == 0){
-                            likeStmt.executeBatch();
-                        }
-                    }
-                    for(long coin:videoRecord.getCoin()){
-                        coinStmt.setString(1,videoRecord.getBv());
-                        coinStmt.setLong(2,coin);
-                        coinStmt.addBatch();
-                        cntCoin++;
-                        if(cntCoin % 100 == 0){
-                            coinStmt.executeBatch();
-                        }
-                    }
-                    for(long favorite:videoRecord.getFavorite()){
-                        favoriteStmt.setString(1,videoRecord.getBv());
-                        favoriteStmt.setLong(2,favorite);
-                        favoriteStmt.addBatch();
-                        cntFavorite++;
-                        if(cntFavorite % 100 == 0){
-                            favoriteStmt.executeBatch();
-                        }
-                    }
-                    for (int i = 0; i < videoRecord.getViewerMids().length; i++) {
-                        viewStmt.setString(1,videoRecord.getBv());
-                        viewStmt.setLong(2,videoRecord.getViewerMids()[i]);
-                        viewStmt.setFloat(3,videoRecord.getViewTime()[i]);
-                        viewStmt.addBatch();
-                        cntView++;
-                        if(cntView % 100 == 0){
-                            viewStmt.executeBatch();
-                        }
-                    }
                     if(cntVideo % 100 == 0){
                         videoStmt.executeBatch();
                     }
                 }
                 videoStmt.executeBatch();
-                likeStmt.executeBatch();
-                coinStmt.executeBatch();
-                favoriteStmt.executeBatch();
-                viewStmt.executeBatch();
             }
             // like coin favorite view
             try (PreparedStatement likeStmt = conn.prepareStatement(likeSql);
@@ -246,21 +198,23 @@ public class DatabaseServiceImpl implements DatabaseService {
                 favoriteStmt.executeBatch();
                 viewStmt.executeBatch();
             }
-            String danmuId;
-            // 导入弹幕记录
+            long danmuId=1;
+            // danmu
             try (PreparedStatement danmuStmt = conn.prepareStatement(danmuSql);
                  PreparedStatement DanmuLikeByStmt = conn.prepareStatement(DanmuLikeBySql)) {
+
                 for (DanmuRecord danmuRecord : danmuRecords) {
                     danmuStmt.setString(1, danmuRecord.getBv());
                     danmuStmt.setLong(2, danmuRecord.getMid());
                     danmuStmt.setFloat(3, danmuRecord.getTime());
                     danmuStmt.setString(4, danmuRecord.getContent());
                     danmuStmt.setTimestamp(5, danmuRecord.getPostTime());
+                    danmuStmt.setLong(6, danmuId);
                     danmuStmt.addBatch(); // 添加到批处理
                     cntDanmu++;
-                    danmuId = findDanmuId(danmuRecord.getBv(),danmuRecord.getMid());
+                    danmuId++;
                     for(long likeBy:danmuRecord.getLikedBy()){
-                        DanmuLikeByStmt.setString(1,danmuId);
+                        DanmuLikeByStmt.setLong(1,danmuId);
                         DanmuLikeByStmt.setLong(2,likeBy);
                         DanmuLikeByStmt.addBatch();
                         cntLikeDanmu++;
@@ -292,21 +246,21 @@ public class DatabaseServiceImpl implements DatabaseService {
      * Reference: [Data Access Object pattern](https://www.baeldung.com/java-dao-pattern)
      */
 
-    public String findDanmuId(String bv,long mid){
-        String sql = "select danmu_id from danmu where bv = ? and user_mid = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, bv);
-            stmt.setLong(2, mid);
-            log.info("SQL: {}", stmt);
-
-            ResultSet rs = stmt.executeQuery();
-            rs.next();
-            return rs.getString(1);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    public String findDanmuId(String bv,long mid){
+//        String sql = "select danmu_id from danmu where bv = ? and user_mid = ?";
+//        try (Connection conn = dataSource.getConnection();
+//             PreparedStatement stmt = conn.prepareStatement(sql)) {
+//            stmt.setString(1, bv);
+//            stmt.setLong(2, mid);
+//            log.info("SQL: {}", stmt);
+//
+//            ResultSet rs = stmt.executeQuery();
+//            rs.next();
+//            return rs.getString(1);
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
     @Override
     public void truncate() {
         // You can use the default truncate script provided by us in most cases,

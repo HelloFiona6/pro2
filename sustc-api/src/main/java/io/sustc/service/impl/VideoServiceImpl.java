@@ -183,7 +183,6 @@ public class VideoServiceImpl implements VideoService {
         if (req.getPublicTime() != null && req.getPublicTime().before(Timestamp.valueOf(LocalDateTime.now()))) {
             return false;
         }
-
         // have post
         if (isTitleMidDuplicate(req.getTitle(), auth.getMid())) return false;
 
@@ -851,6 +850,7 @@ public class VideoServiceImpl implements VideoService {
         if(isMatchMidBv(auth,bv)) return false;
         if(getAuthCoin(auth) == 0) return false;
 
+        // todo user coin--
         // update the number of coin in the coin table
         String insertCoin = "INSERT INTO coin (video_BV, user_mid) VALUES (?, ?)";
         try (Connection conn = dataSource.getConnection();
